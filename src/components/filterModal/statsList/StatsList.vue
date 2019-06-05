@@ -20,6 +20,7 @@
               primary
               :disabled="primaryDisabled(stat)"
               :filled="filledStat(stat)"
+              :hasFiltered="hasPrimaryFiltered(stat)"
             >
                 <div v-if="stat.type === 'group'">
                     <BaseCollapseHeader
@@ -29,11 +30,12 @@
                       :name="subStat.title || subStat.name"
                       :disabled="secondaryDisabled(subStat)"
                       :filled="filledStat(subStat)"
+                      :hasFiltered="hasFiltered(subStat)"
                     >
                         <StatsListEditor
                           v-if="filledStat(subStat) || showStat(subStat)"
                           :type="subStat.type"
-                          :data="subStat.data"
+                          :data="filteredData(subStat)"
                           :name="subStat.name"
                           :render="subStat.render"
                         />
@@ -42,7 +44,7 @@
                 <StatsListEditor
                   v-else-if="filledStat(stat) || showStat(stat)"
                   :type="stat.type"
-                  :data="stat.data"
+                  :data="filteredData(stat)"
                   :name="stat.name"
                 />
             </BaseCollapseHeader>
@@ -89,6 +91,41 @@ export default {
                     element.click();
                 }
             });
+        },
+        hasFiltered(data) {
+            if (this.searchQuery) {
+                let array;
+                if (Array.isArray(data.data)) {
+                    array = data.data;
+                } else if (data.data.variants) {
+                    // INHERITANCE - custom handler
+                    array = data.data.variants.concat(data.data.family);
+                }
+                const result = array.filter(item => (Array.isArray(item) ? item[0].toLowerCase()
+                    .includes(this.searchQuery.toLowerCase()) : false));
+                return !!result.length;
+            }
+            return false;
+        },
+        hasSecondaryFiltered(data) {
+            return !!data.filter(item => (item.name ? item.name.toLowerCase()
+                .includes(this.searchQuery.toLowerCase()) : false)).length;
+        },
+        hasPrimaryFiltered(data) {
+            if (data.data && Array.isArray(data.data)) {
+                const filter = data.data.filter(item => (Array.isArray(item) ?
+                    this.hasFiltered(data) : this.hasFiltered(item)));
+                return filter.length ? true : this.hasSecondaryFiltered(data.data);
+            }
+            return false;
+        },
+        filteredData(data) {
+            if (this.searchQuery && Array.isArray(data.data)) {
+                const result = data.data.filter(item => (Array.isArray(item) ? item[0].toLowerCase()
+                    .includes(this.searchQuery.toLowerCase()) : false));
+                return result.length ? result : data.data;
+            }
+            return data.data;
         },
         toggleNonzeroCheckbox() {
             this.nonzeroChecked = !this.nonzeroChecked;
@@ -140,6 +177,28 @@ export default {
     },
     mounted() {
         this.expandPreselectedStats();
+    },
+    watch: {
+        searchQuery() {
+            if (this.searchQuery === '') {
+                this.toggleFilters('false');
+            } else {
+                let elements =
+                    document.querySelectorAll('.js-toggle-filters.collapsed:not(.collapse-header_disabled)');
+                Array.from(elements).forEach((element) => {
+                    if (element.getAttribute('aria-expanded') !== 'true' && element.getAttribute('hasfiltered')) {
+                        element.click();
+                    }
+                });
+                elements =
+                    document.querySelectorAll('.js-toggle-filters:not(.collapse-header_disabled)');
+                Array.from(elements).forEach((element) => {
+                    if (element.getAttribute('aria-expanded') === 'true' && !element.getAttribute('hasfiltered')) {
+                        element.click();
+                    }
+                });
+            }
+        },
     },
 };
 </script>
