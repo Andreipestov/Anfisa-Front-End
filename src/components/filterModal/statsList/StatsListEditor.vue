@@ -29,6 +29,7 @@
           :buttonText="buttonText"
         />
         <BaseEditorEnum
+          ref="baseEditorEnum"
           v-else-if="type === statTypes.enum || type === statTypes.status"
           :list="data"
           :preselectedData="preselectedData"
@@ -142,6 +143,7 @@ export default {
             const condition = [STAT_TYPE_ENUM, this.name, ENUM_DEFAULT_OPERATOR, [...data]];
             this.$store.commit('setCurrentConditions', condition);
             this.$store.dispatch('getListByConditions');
+            this.$refs.baseEditorEnum.cleanQuery();
         },
         submitZygosityHandler(family, variants) {
             const condition = [STAT_TYPE_ZYGOSITY, this.name, family, '', variants];
