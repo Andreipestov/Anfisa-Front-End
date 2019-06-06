@@ -9,7 +9,14 @@
 
 <script>
 export default {
-    props: ['onRemove'],
+    props: ['onRemove', 'data'],
+    watch: {
+        data() {
+            if (this.data && !this.data.length) {
+                this.onRemove();
+            }
+        },
+    },
 };
 </script>
 
