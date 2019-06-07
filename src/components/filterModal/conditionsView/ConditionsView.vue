@@ -6,7 +6,7 @@
           class="filter-modal-conditions_item"
         >
             <BaseConditionWrapper :onRemove="() => removeHandler(condition[1])"
-                                  :data="condition[3]">
+                                  :condition="condition">
                 <BaseViewFloat
                   v-if="condition[0] === statTypes.numeric"
                   :name="condition[1]"
