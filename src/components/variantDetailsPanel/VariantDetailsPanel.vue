@@ -117,20 +117,7 @@ export default {
     },
     computed: {
         variantDetails() {
-            const { variantDetails } = this.$store.state;
-            if (variantDetails.view_gen && variantDetails.view_gen.data) {
-                for (let i = 0; i < variantDetails.view_gen.data.length; i++) {
-                    const item = variantDetails.view_gen.data[i];
-                    if (item[0] === 'IGV') {
-                        item[1] = item[1].replace('target="blank"', '').replace('link</a>', 'link</a>' +
-                            ' <span style="font-size:12px">(for this link to work, make sure' +
-                            ' <a href="https://software.broadinstitute.org/software/igv/download" target="_blank">' +
-                            'the IGV app</a>' +
-                            ' is running on your computer)</span>');
-                    }
-                }
-            }
-            return variantDetails;
+            return this.$store.state.variantDetails;
         },
         annotation() {
             return this.$store.getters.annotation;
