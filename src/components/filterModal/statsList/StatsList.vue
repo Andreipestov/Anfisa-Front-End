@@ -119,13 +119,24 @@ export default {
             }
             return false;
         },
-        filteredData(data) {
-            if (this.searchQuery && Array.isArray(data.data)) {
-                const result = data.data.filter(item => (Array.isArray(item) ? item[0].toLowerCase()
-                    .includes(this.searchQuery.toLowerCase()) : false));
-                return result.length ? result : data.data;
+        filteredData(stat) {
+            let result = stat.data;
+            if (stat.type !== 'zygosity' && Array.isArray(result)) {
+                result = this.filterData(result);
+            } else if (stat.type === 'zygosity') {
+                result = {
+                    ...result,
+                    variants: this.filterData(stat.data.variants),
+                    family: stat.data.family.filter(f =>
+                        f.toLowerCase().includes(this.searchQuery.toLowerCase())),
+                };
             }
-            return data.data;
+            return result;
+        },
+        filterData(data) {
+            return data.filter(i => (Array.isArray(i) ? i[0].toLowerCase()
+                .includes(this.searchQuery.toLowerCase()) && (this.nonzeroChecked ? i[1] : true) :
+                false));
         },
         toggleNonzeroCheckbox() {
             this.nonzeroChecked = !this.nonzeroChecked;
@@ -140,7 +151,7 @@ export default {
         primaryDisabled(stat) {
             return !this.filledStat(stat) && (
                 (stat.type === STAT_GROUP && !stat.data.length)
-                || (stat.type !== STAT_GROUP && !this.showStat(stat.data[0]))
+                || (stat.type !== STAT_GROUP && !this.showStat(stat))
             );
         },
         secondaryDisabled(stat) {
