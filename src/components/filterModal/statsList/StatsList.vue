@@ -92,17 +92,15 @@ export default {
                 }
             });
         },
-        hasFiltered(data) {
+        hasFiltered(subStat) {
             if (this.searchQuery) {
-                let array;
-                if (Array.isArray(data.data)) {
-                    array = data.data;
-                } else if (data.data.variants) {
+                let array = subStat.data;
+                if (subStat.type === 'zygosity') {
                     // INHERITANCE - custom handler
-                    array = data.data.variants.concat(data.data.family);
+                    array = array.variants.concat(array.family);
                 }
-                const result = array.filter(item => (Array.isArray(item) ? item[0].toLowerCase()
-                    .includes(this.searchQuery.toLowerCase()) : false));
+                const result = array.filter(item => Array.isArray(item) && item[0].toLowerCase()
+                    .includes(this.searchQuery.toLowerCase()));
                 return !!result.length;
             }
             return false;
@@ -121,22 +119,28 @@ export default {
         },
         filteredData(stat) {
             let result = stat.data;
-            if (stat.type !== 'zygosity' && Array.isArray(result)) {
-                result = this.filterData(result);
-            } else if (stat.type === 'zygosity') {
+            if (stat.type === 'zygosity') {
                 result = {
                     ...result,
-                    variants: this.filterData(stat.data.variants),
-                    family: stat.data.family.filter(f =>
-                        f.toLowerCase().includes(this.searchQuery.toLowerCase())),
+                    variants: this.filterData(result.variants),
+                    family: result.family.filter(f =>
+                        f.toLowerCase()
+                            .includes(this.searchQuery.toLowerCase())),
                 };
+            } else {
+                result = this.filterData(result);
             }
             return result;
         },
         filterData(data) {
-            return data.filter(i => (Array.isArray(i) ? i[0].toLowerCase()
-                .includes(this.searchQuery.toLowerCase()) && (this.nonzeroChecked ? i[1] : true) :
-                false));
+            return data.filter((item) => {
+                if (Array.isArray(item)) {
+                    const nonCheckedRes = this.nonzeroChecked ? item[1] : true;
+                    return nonCheckedRes && item[0].toLowerCase()
+                        .includes(this.searchQuery.toLowerCase());
+                }
+                return false;
+            });
         },
         toggleNonzeroCheckbox() {
             this.nonzeroChecked = !this.nonzeroChecked;
