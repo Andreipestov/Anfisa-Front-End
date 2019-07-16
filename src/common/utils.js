@@ -18,6 +18,7 @@ const prepareNumericStatData = statItem => ({
     type: statItem[0],
     name: statItem[1].name,
     title: statItem[1].title,
+    tooltip: statItem[1].tooltip,
     render: statItem[1].render ? statItem[1].render.split(',')[0] : NUMERIC_RENDER_TYPES.LINEAR,
     data: statItem.splice(2),
 });
@@ -26,6 +27,7 @@ const prepareEnumStatData = statItem => ({
     type: statItem[0],
     name: statItem[1].name,
     title: statItem[1].title,
+    tooltip: statItem[1].tooltip,
     data: statItem[2],
 });
 
@@ -58,13 +60,13 @@ export const prepareStatDataByType = (statItem) => {
 export function prepareStatList(statList) {
     const tmpResult = [];
     const groupsData = {};
-    let result = [];
+    let result;
 
     if (statList && Array.isArray(statList)) {
         statList.filter(statItem => STAT_TYPES.includes(statItem[0])).forEach((statItem) => {
             const groupName = statItem[1].vgroup;
             if (groupName) {
-                if (!Object.keys(groupsData).includes(statItem[1].vgroup)) {
+                if (!Object.keys(groupsData).includes(groupName)) {
                     tmpResult.push({
                         title: groupName,
                         type: STAT_GROUP,
@@ -114,21 +116,6 @@ export function prepareParams({
     return params;
 }
 
-function updateIGVLink(variantDetails) {
-    if (variantDetails.view_gen && variantDetails.view_gen.data) {
-        for (let i = 0; i < variantDetails.view_gen.data.length; i += 1) {
-            const item = variantDetails.view_gen.data[i];
-            if (item[0] === 'IGV') {
-                item[1] = item[1].replace('target="blank"', '').replace('link</a>', `link</a>
-                    <span style="font-size:12px">(for this link to work, make sure
-                    <a href="https://software.broadinstitute.org/software/igv/download" target="_blank">
-                    the IGV app</a> is running on your computer)</span>`);
-            }
-        }
-    }
-    return variantDetails;
-}
-
 export function prepareVariantDetails(data) {
     const result = {};
     const getValuesForRow = row => (Array.isArray(row) ? row.map(val => val[0]) : []);
@@ -146,7 +133,7 @@ export function prepareVariantDetails(data) {
             };
         }
     });
-    return updateIGVLink(result);
+    return result;
 }
 
 export function expired(date) {
