@@ -133,11 +133,16 @@ export default {
             return result;
         },
         filterData(data) {
+            return !!this.filterDataSuccess(data, false).length ? this.filterDataSuccess(data,
+                false) : this.filterDataSuccess(data, true);
+        },
+        filterDataSuccess(data, isAll) {
             return data.filter((item) => {
                 if (Array.isArray(item)) {
                     const nonCheckedRes = this.nonzeroChecked ? item[1] : true;
-                    return nonCheckedRes && item[0].toLowerCase()
-                        .includes(this.searchQuery.toLowerCase());
+                    return nonCheckedRes &&
+                        (isAll ? item[0].toLowerCase() :
+                            item[0].toLowerCase().includes(this.searchQuery.toLowerCase()));
                 }
                 return false;
             });
@@ -195,24 +200,26 @@ export default {
     },
     watch: {
         searchQuery() {
-            if (this.searchQuery === '') {
-                this.toggleFilters('false');
-            } else {
-                let elements =
-                    document.querySelectorAll('.js-toggle-filters.collapsed:not(.collapse-header_disabled)');
-                Array.from(elements).forEach((element) => {
-                    if (element.getAttribute('aria-expanded') !== 'true' && element.getAttribute('hasfiltered')) {
-                        element.click();
-                    }
-                });
-                elements =
-                    document.querySelectorAll('.js-toggle-filters:not(.collapse-header_disabled)');
-                Array.from(elements).forEach((element) => {
-                    if (element.getAttribute('aria-expanded') === 'true' && !element.getAttribute('hasfiltered')) {
-                        element.click();
-                    }
-                });
-            }
+            this.$nextTick(function () {
+                if (this.searchQuery === '') {
+                    this.toggleFilters('false');
+                } else {
+                    let elements =
+                        document.querySelectorAll('.js-toggle-filters.collapsed:not(.collapse-header_disabled)');
+                    Array.from(elements).forEach((element) => {
+                        if (element.getAttribute('aria-expanded') !== 'true' && element.getAttribute('hasfiltered')) {
+                            element.click();
+                        }
+                    });
+                    elements =
+                        document.querySelectorAll('.js-toggle-filters:not(.collapse-header_disabled)');
+                    Array.from(elements).forEach((element) => {
+                        if (element.getAttribute('aria-expanded') === 'true' && !element.getAttribute('hasfiltered')) {
+                            element.click();
+                        }
+                    });
+                }
+            });
         },
     },
 };
