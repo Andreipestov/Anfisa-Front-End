@@ -95,13 +95,19 @@ export default {
         },
         hasFiltered(subStat) {
             if (this.searchQuery) {
+                const query = this.searchQuery.toLowerCase();
                 let array = subStat.data;
                 if (subStat.type === 'zygosity') {
                     // INHERITANCE - custom handler
                     array = array.variants.concat(array.family);
                 }
-                const result = array.filter(item => Array.isArray(item) && item[0].toLowerCase()
-                    .includes(this.searchQuery.toLowerCase()));
+                const result = array.filter((item) => {
+                    if (Array.isArray(item)) {
+                        const nonCheckedRes = this.nonzeroChecked ? item[1] : true;
+                        return nonCheckedRes && item[0].toLowerCase().includes(query);
+                    }
+                    return false;
+                });
                 return !!result.length;
             }
             return false;
@@ -120,52 +126,69 @@ export default {
         },
         filteredData(stat) {
             let result = stat.data;
+            const query = this.searchQuery.toLowerCase();
+            const isSubstat = (stat.title || stat.name).toLowerCase().includes(query);
             if (stat.type === 'zygosity') {
                 result = {
                     ...result,
-                    variants: this.filterData(result.variants),
+                    variants: this.filterData(result.variants, isSubstat),
                     family: result.family.filter(f =>
-                        f.toLowerCase()
-                            .includes(this.searchQuery.toLowerCase())),
+                        f.toLowerCase().includes(query)),
                 };
+                if (!(!!result.variants.length || !!result.family.length)) {
+                    result = [];
+                }
             } else {
-                result = this.filterData(result);
+                result = this.filterData(result, isSubstat);
             }
             return result;
         },
-        filterData(data) {
-            return !!this.filterDataSuccess(data, false).length ? this.filterDataSuccess(data,
-                false) : this.filterDataSuccess(data, true);
-        },
-        filterDataSuccess(data, isAll) {
+        filterData(data, isSubstat) {
+            const query = this.searchQuery.toLowerCase();
             return data.filter((item) => {
                 if (Array.isArray(item)) {
                     const nonCheckedRes = this.nonzeroChecked ? item[1] : true;
-                    return nonCheckedRes &&
-                        (isAll ? item[0].toLowerCase() :
-                            item[0].toLowerCase().includes(this.searchQuery.toLowerCase()));
+                    return nonCheckedRes && (isSubstat ? item[0].toLowerCase() :
+                        item[0].toLowerCase().includes(query));
                 }
                 return false;
             });
         },
         toggleNonzeroCheckbox() {
             this.nonzeroChecked = !this.nonzeroChecked;
+            if (this.nonzeroChecked) {
+                const query = this.searchQuery;
+                this.searchQuery = '';
+                this.clicks();
+                this.searchQuery = query;
+            } else {
+                setTimeout(() => {
+                    this.clicks();
+                }, 1);
+            }
         },
         filledStat(stat) {
             return Boolean(this.oCurrentConditions[stat.name] || (stat.type === STAT_GROUP
                 && stat.data.filter(subStat => this.oCurrentConditions[subStat.name]).length));
         },
         showStat(stat) {
-            return !this.nonzeroChecked || checkNonzeroStat(stat);
+            return !this.nonzeroChecked || checkNonzeroStat(stat, this.searchQuery);
         },
         primaryDisabled(stat) {
             return !this.filledStat(stat) && (
-                (stat.type === STAT_GROUP && !stat.data.length)
+                (stat.type === STAT_GROUP && this.inheritanceHandler(stat))
                 || (stat.type !== STAT_GROUP && !this.showStat(stat))
             );
         },
+        inheritanceHandler(stat) {
+            if (stat.title === 'Inheritance') {
+                return !stat.data.filter(item => this.filteredData(item).variants).length
+                    || !stat.data.length;
+            }
+            return !stat.data.length;
+        },
         secondaryDisabled(stat) {
-            return !this.filledStat(stat) && !this.showStat(stat);
+            return !this.filledStat(stat) && !this.showStat(stat) && this.inheritanceHandler(stat);
         },
         expandPreselectedStats() {
             const isStringTrue = value => value === 'true';
@@ -195,32 +218,33 @@ export default {
                 }
             });
         },
+        clicks() {
+            if (this.searchQuery === '') {
+                this.toggleFilters('false');
+            } else {
+                let elements =
+                    document.querySelectorAll('.js-toggle-filters.collapsed:not(.collapse-header_disabled)');
+                Array.from(elements).forEach((element) => {
+                    if (element.getAttribute('aria-expanded') !== 'true' && element.getAttribute('hasfiltered')) {
+                        element.click();
+                    }
+                });
+                elements =
+                    document.querySelectorAll('.js-toggle-filters:not(.collapse-header_disabled)');
+                Array.from(elements).forEach((element) => {
+                    if (element.getAttribute('aria-expanded') === 'true' && !element.getAttribute('hasfiltered')) {
+                        element.click();
+                    }
+                });
+            }
+        },
     },
     mounted() {
         this.expandPreselectedStats();
     },
     watch: {
         searchQuery() {
-            this.$nextTick(function () {
-                if (this.searchQuery === '') {
-                    this.toggleFilters('false');
-                } else {
-                    let elements =
-                        document.querySelectorAll('.js-toggle-filters.collapsed:not(.collapse-header_disabled)');
-                    Array.from(elements).forEach((element) => {
-                        if (element.getAttribute('aria-expanded') !== 'true' && element.getAttribute('hasfiltered')) {
-                            element.click();
-                        }
-                    });
-                    elements =
-                        document.querySelectorAll('.js-toggle-filters:not(.collapse-header_disabled)');
-                    Array.from(elements).forEach((element) => {
-                        if (element.getAttribute('aria-expanded') === 'true' && !element.getAttribute('hasfiltered')) {
-                            element.click();
-                        }
-                    });
-                }
-            });
+            this.$nextTick(this.clicks);
         },
     },
 };
