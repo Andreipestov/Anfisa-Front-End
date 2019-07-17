@@ -34,6 +34,7 @@
                 :preselectedData="preselectedData"
                 :onSubmit="submitEnumHandler"
                 :buttonText="buttonText"
+                ref="editorEnum"
         />
         <BaseEditorZygosity
                 v-else-if="type === statTypes.zygosity"
@@ -44,6 +45,7 @@
                 :onSubmit="submitZygosityHandler"
                 :onFamilyChange = "changeFamily"
                 :buttonText="buttonText"
+                ref="editorZygosity"
         />
     </div>
 </template>
@@ -139,12 +141,16 @@ export default {
         },
         // Apply  enum editor changes: selected list of items
         submitEnumHandler(data) {
+            this.clearSearchQuery();
+            this.$refs.editorEnum.clearQuery();
             const condition = [STAT_TYPE_ENUM, this.name, ENUM_DEFAULT_OPERATOR, [...data]];
             this.$store.commit('setCurrentConditions', condition);
             this.$store.dispatch('getListByConditions');
             this.$refs.baseEditorEnum.cleanQuery();
         },
         submitZygosityHandler(family, variants) {
+            this.clearSearchQuery();
+            this.$refs.editorZygosity.clearQuery();
             const condition = [STAT_TYPE_ZYGOSITY, this.name, family, '', variants];
             this.$store.commit('setCurrentConditions', condition);
             this.$store.dispatch('getListByConditions');
@@ -152,6 +158,9 @@ export default {
         changeFamily(family) {
             this.$store.dispatch('getZygosityByFamily', { family, name: this.name });
         },
+        clearSearchQuery() {
+            this.$store.commit('setFilterSearchQuery', '');
+        }
     },
 };
 </script>
