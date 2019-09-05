@@ -203,7 +203,6 @@ export default {
             const isStringTrue = value => value === 'true';
             const getStatName = stat => stat.title || stat.name;
             this.nonzeroChecked = false;
-            // this.searchQuery = '';
             this.$store.commit('setFilterSearchQuery', '');
             const elements = document.getElementsByClassName(this.className);
             const expandSet = new Set();

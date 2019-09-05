@@ -29,6 +29,7 @@ const prepareEnumStatData = statItem => ({
     title: statItem[1].title,
     tooltip: statItem[1].tooltip,
     data: statItem[2],
+    render: statItem[1].render,
 });
 
 const prepareZygosityStatData = statItem => ({
@@ -56,6 +57,21 @@ export const prepareStatDataByType = (statItem) => {
         return null;
     }
 };
+
+export function getStatListWithOperativeStat(data) {
+    const statsToAdd = (data && data['avail-import']) || [];
+    let statList = data['stat-list'];
+    if (statList && Array.isArray(statList)) {
+        statsToAdd.forEach((statToAdd) => {
+            const dubbedHetStat = statList.findIndex(statItem => statItem[1].name === statToAdd);
+            if (dubbedHetStat === -1) {
+                const target = [STAT_TYPE_ENUM, { vgroup: 'Inheritance', name: statToAdd, render: 'operative' }, [['True', null]]];
+                statList = [...statList, target];
+            }
+        });
+    }
+    return statList;
+}
 
 export function prepareStatList(statList) {
     const tmpResult = [];
@@ -121,7 +137,7 @@ export function prepareVariantDetails(data) {
     const getValuesForRow = row => (Array.isArray(row) ? row.map(val => val[0]) : []);
     data.forEach((item) => {
         if (item.type === 'table') {
-            const tableData = item.rows.map(row => [row[1], ...getValuesForRow(row[2])]);
+            const tableData = item.rows.map(row => [{data:row[1], title: row[3]}, ...getValuesForRow(row[2])]);
             result[item.name] = {
                 title: item.title,
                 data: tableData,
